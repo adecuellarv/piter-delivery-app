@@ -8,11 +8,12 @@ import {
   Linking,
   Alert,
 } from 'react-native';
-import { MessageCircle } from 'lucide-react-native';
-import tw from  '../../../tw'
+import { useRouter } from "expo-router";
+import tw from  '../../tw'
 import logo from './img/piter-eats-logo.png';
 
 export default function LoginScreen() {
+  const router = useRouter();
   const [token, setToken] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -25,6 +26,8 @@ export default function LoginScreen() {
     setLoading(true);
 
     try {
+      router.replace("/(app)/home");
+      /*
       const response = await fetch('https://tu-api.com/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -37,7 +40,7 @@ export default function LoginScreen() {
         Alert.alert('Éxito', 'Login exitoso');
       } else {
         Alert.alert('Error', data.message || 'Token inválido');
-      }
+      }*/
     } catch (error) {
       Alert.alert('Error', 'No se pudo conectar con el servidor');
       console.error('Login error:', error);
@@ -47,11 +50,9 @@ export default function LoginScreen() {
   };
 
   const handleWhatsApp = () => {
-    const phoneNumber = '1234567890';
+    const phoneNumber = '+524426012026'; 
     const message = 'Hola, quiero ser miembro de PITER EATS';
-    const url = `whatsapp://send?phone=${phoneNumber}&text=${encodeURIComponent(
-      message
-    )}`;
+    const url = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
 
     Linking.canOpenURL(url)
       .then((supported) => {

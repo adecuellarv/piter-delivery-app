@@ -1,8 +1,10 @@
-import LoginScreen from './pages/login/login';
-import '../global.css';
+import { View, Text } from "react-native"
+import { Redirect } from 'expo-router';
 
-export default function Home() {
+export default function Index() {
   return (
-    <LoginScreen />
-  );
+    <>
+      <Redirect href="/(auth)/login" />
+    </>
+  )
 }

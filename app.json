@@ -2,6 +2,7 @@
   "expo": {
     "name": "Piter delivery",
     "slug": "piter-delivery",
+    "scheme": "piterdelivery",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
