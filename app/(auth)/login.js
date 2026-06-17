@@ -14,6 +14,7 @@ import {
 import { Eye, EyeOff } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import tw from '../../tw';
+import { useAuthStore } from '../../store/authStore';
 
 const logo = require('../../assets/logo_piter_east.png');
 
@@ -35,6 +36,7 @@ const BTN = {
 
 export default function LoginScreen() {
   const router = useRouter();
+  const setSession = useAuthStore((s) => s.setSession);
   const [correo, setCorreo] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -73,9 +75,16 @@ export default function LoginScreen() {
     }
     setLoading(true);
     try {
+      /*
+      const data = await loginApi({ correo: correo.trim(), password });
+      setSession({ correo: correo.trim(), token: data.token, ...data });
+      */
+
+      // Mock: guarda sesión mínima hasta que el endpoint esté listo
+      setSession({ correo: correo.trim() });
       router.replace('/(app)/home');
     } catch (error) {
-      Alert.alert('Error', 'No se pudo conectar con el servidor');
+      Alert.alert('Error', error.message || 'No se pudo conectar con el servidor');
     } finally {
       setLoading(false);
     }

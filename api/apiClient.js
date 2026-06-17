@@ -12,12 +12,8 @@ apiClient.interceptors.request.use(
     if (typeof config.headers?.set === 'function') {
       config.headers.set('Content-Type', 'application/json');
     } else {
-      config.headers = {
-        ...config.headers,
-        'Content-Type': 'application/json',
-      };
+      config.headers = { ...config.headers, 'Content-Type': 'application/json' };
     }
-
     return config;
   },
   (error) => Promise.reject(error)
