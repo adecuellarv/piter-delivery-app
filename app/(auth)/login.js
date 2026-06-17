@@ -4,14 +4,12 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  Image,
   Alert,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
 import { useRouter } from "expo-router";
 import tw from '../../tw'
-import logo from '../../assets/icon.png';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -57,21 +55,10 @@ export default function LoginScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={tw`flex-1 bg-[#E8E3D8]`}
+      style={tw`flex-1`}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <View style={tw`flex-1 justify-center items-center px-8`}>
-        {/* Logo */}
-        <View style={tw`items-center`}>
-
-          <Image
-            source={logo}
-            style={{ width: 190, height: 190 }}
-            resizeMode="contain"
-          />
-
-        </View>
-
+      <View style={tw`flex-1 justify-center items-center px-8 pb-20`}>
         <Text
           style={tw`text-[#3D3D3D] text-xl font-semibold self-start`}
         >

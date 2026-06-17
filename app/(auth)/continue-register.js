@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
 import {
-  View,
   Text,
   TextInput,
   TouchableOpacity,
-  Image,
   Linking,
   Alert,
   KeyboardAvoidingView,
@@ -13,7 +11,6 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import tw from '../../tw';
-import logo from '../../assets/icon.png';
 
 export default function ContinueRegisterScreen() {
   const router = useRouter();
@@ -66,30 +63,20 @@ export default function ContinueRegisterScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={tw`flex-1 bg-[#E8E3D8]`}
+      style={tw`flex-1`}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView
-        contentContainerStyle={tw`flex-grow justify-center px-8 py-2`}
+        contentContainerStyle={tw`flex-grow justify-center px-8 pb-8`}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={tw`items-center mb-2`}>
-          <Image
-            source={logo}
-            style={{ width: 190, height: 190 }}
-            resizeMode="contain"
-          />
-        </View>
 
-        <Text style={tw`text-[#3D3D3D] text-xl font-bold mb-8`}>
-          Seguir registro
-        </Text>
 
-        <Text style={tw`text-[#3D3D3D] text-lg font-semibold mb-3`}>
+        <Text style={tw`text-[#3D3D3D] text-xl font-semibold self-start`}>
           Correo
         </Text>
         <TextInput
-          style={tw`w-full bg-white border-2 border-[#3D3D3D] rounded-[16px] px-6 py-4 text-lg text-[#3D3D3D] mb-5`}
+          style={tw`w-full bg-white border-2 border-[#3D3D3D] rounded-[16px] px-4 pt-2 pb-3 text-lg text-[#3D3D3D] `}
           placeholder="Introduce tu correo"
           placeholderTextColor="#999"
           value={form.correo}
@@ -99,12 +86,15 @@ export default function ContinueRegisterScreen() {
           keyboardType="email-address"
           textContentType="emailAddress"
         />
+        <Text style={tw`text-[#666] text-sm self-start mb-3 mt-1`}>
+          El correo debe ser igual al que enviaste en tu solicitud de registro.
+        </Text>
 
-        <Text style={tw`text-[#3D3D3D] text-xl font-semibold mb-3`}>
+        <Text style={tw`text-[#3D3D3D] text-xl font-semibold self-start`}>
           Teléfono
         </Text>
         <TextInput
-          style={tw`w-full bg-white border-2 border-[#3D3D3D] rounded-[16px] px-6 py-4 text-lg text-[#3D3D3D] mb-5`}
+          style={tw`w-full bg-white border-2 border-[#3D3D3D] rounded-[16px] px-4 pt-2 pb-3 text-lg text-[#3D3D3D]`}
           placeholder="Introduce tu teléfono"
           placeholderTextColor="#999"
           value={form.telefono}
@@ -113,12 +103,15 @@ export default function ContinueRegisterScreen() {
           keyboardType="phone-pad"
           textContentType="telephoneNumber"
         />
+          <Text style={tw`text-[#666] text-sm self-start mb-3 mt-1`}>
+          El teléfono debe ser igual al que enviaste en tu solicitud de registro.
+        </Text>
 
-        <Text style={tw`text-[#3D3D3D] text-xl font-semibold mb-3`}>
+        <Text style={tw`text-[#3D3D3D] text-xl font-semibold self-start`}>
           Contraseña
         </Text>
         <TextInput
-          style={tw`w-full bg-white border-2 border-[#3D3D3D] rounded-[16px] px-6 py-4 text-lg text-[#3D3D3D] mb-5`}
+          style={tw`w-full bg-white border-2 border-[#3D3D3D] rounded-[16px] px-4 pt-2 pb-3 text-lg text-[#3D3D3D] mb-3`}
           placeholder="Crea una contraseña"
           placeholderTextColor="#999"
           value={form.password}
@@ -129,11 +122,11 @@ export default function ContinueRegisterScreen() {
           textContentType="newPassword"
         />
 
-        <Text style={tw`text-[#3D3D3D] text-xl font-semibold mb-3`}>
+        <Text style={tw`text-[#3D3D3D] text-xl font-semibold self-start`}>
           Confirmar contraseña
         </Text>
         <TextInput
-          style={tw`w-full bg-white border-2 border-[#3D3D3D] rounded-[16px] px-6 py-4 text-lg text-[#3D3D3D] mb-7`}
+          style={tw`w-full bg-white border-2 border-[#3D3D3D] rounded-[16px] px-4 pt-2 pb-3 text-lg text-[#3D3D3D] mb-3`}
           placeholder="Confirma tu contraseña"
           placeholderTextColor="#999"
           value={form.confirmPassword}
@@ -145,7 +138,7 @@ export default function ContinueRegisterScreen() {
         />
 
         <TouchableOpacity
-          style={tw`w-full bg-[#C86F4F] rounded-[16px] py-5 items-center shadow-lg mb-6`}
+          style={tw`w-full bg-[#C86F4F] rounded-[16px] py-2 items-center shadow-lg mb-8`}
           onPress={handleBecomeMember}
           activeOpacity={0.8}
         >
