@@ -112,7 +112,7 @@ export default function LoginScreen() {
           activeOpacity={0.7}
         >
           <Text
-            style={tw`text-[#C86F4F] text-md font-semibold underline`}
+            style={tw`text-[#C86F4F] text-base font-semibold underline`}
           >
             Seguir registro
           </Text>

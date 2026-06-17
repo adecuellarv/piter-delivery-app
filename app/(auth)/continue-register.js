@@ -3,7 +3,6 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  Linking,
   Alert,
   KeyboardAvoidingView,
   Platform,
@@ -11,6 +10,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import tw from '../../tw';
+import { createAccount } from '../../api/login';
 
 export default function ContinueRegisterScreen() {
   const router = useRouter();
@@ -20,6 +20,7 @@ export default function ContinueRegisterScreen() {
     password: '',
     confirmPassword: '',
   });
+  const [loading, setLoading] = useState(false);
 
   const updateField = (field, value) => {
     setForm((currentForm) => ({
@@ -28,7 +29,9 @@ export default function ContinueRegisterScreen() {
     }));
   };
 
-  const handleBecomeMember = () => {
+  const handleBecomeMember = async () => {
+    if (loading) return;
+
     const { correo, telefono, password, confirmPassword } = form;
 
     if (!correo.trim() || !telefono.trim() || !password.trim() || !confirmPassword.trim()) {
@@ -41,24 +44,25 @@ export default function ContinueRegisterScreen() {
       return;
     }
 
-    const phoneNumber = '+524426012026';
-    const message = [
-      'Hola, quiero ser miembro de PITER EATS',
-      `Correo: ${correo}`,
-      `Telefono: ${telefono}`,
-    ].join('\n');
-    const url = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+    setLoading(true);
 
-    Linking.canOpenURL(url)
-      .then((supported) => {
-        if (supported) {
-          return Linking.openURL(url);
-        }
+    try {
+      await createAccount({
+        correo: correo.trim(),
+        telefono: telefono.trim(),
+        password,
+      });
 
-        Alert.alert('Error', 'WhatsApp no está instalado');
-        return null;
-      })
-      .catch((err) => console.error('Error al abrir WhatsApp:', err));
+      Alert.alert(
+        'Cuenta creada',
+        'Tu contraseña se creó correctamente',
+        [{ text: 'OK', onPress: () => router.back() }]
+      );
+    } catch (error) {
+      Alert.alert('Error', error.message || 'No se pudo crear la cuenta');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -140,10 +144,11 @@ export default function ContinueRegisterScreen() {
         <TouchableOpacity
           style={tw`w-full bg-[#C86F4F] rounded-[16px] py-2 items-center shadow-lg mb-8`}
           onPress={handleBecomeMember}
+          disabled={loading}
           activeOpacity={0.8}
         >
           <Text style={tw`text-white text-xl font-bold tracking-wider`}>
-            SER MIEMBRO
+            {loading ? 'CARGANDO...' : 'SER MIEMBRO'}
           </Text>
         </TouchableOpacity>
 
@@ -152,7 +157,7 @@ export default function ContinueRegisterScreen() {
           onPress={() => router.back()}
           activeOpacity={0.7}
         >
-          <Text style={tw`text-[#C86F4F] text-md font-semibold underline`}>
+          <Text style={tw`text-[#C86F4F] text-base font-semibold underline`}>
             Volver a iniciar sesión
           </Text>
         </TouchableOpacity>
