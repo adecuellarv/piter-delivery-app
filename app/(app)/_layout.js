@@ -1,63 +1,67 @@
-// app/_layout.js
-import { Stack, useRouter } from "expo-router";
-import { View, Text, TouchableOpacity } from "react-native";
-import { ArrowLeft, Menu } from "lucide-react-native";
+import { Tabs } from "expo-router";
+import { Home, MapPin, Clock, User } from "lucide-react-native";
 
-export default function RootLayout() {
-  const router = useRouter();
+const ACTIVE_COLOR = "#C86F4F";
+const INACTIVE_COLOR = "#7A7A7A";
+const TAB_BAR_BG = "#1C1C1C";
 
-  // 🔹 Componente de Header personalizado
-  const CustomHeader = ({ title }) => (
-    <View
-      style={{
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-        backgroundColor: "#000",
-        opacity: 0.8
+export default function AppLayout() {
+  return (
+    <Tabs
+      screenOptions={{
+        headerShown: false,
+        tabBarActiveTintColor: ACTIVE_COLOR,
+        tabBarInactiveTintColor: INACTIVE_COLOR,
+        tabBarStyle: {
+          backgroundColor: TAB_BAR_BG,
+          borderTopWidth: 0,
+          height: 72,
+          paddingBottom: 12,
+          paddingTop: 10,
+        },
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontWeight: "500",
+          marginTop: 2,
+        },
       }}
     >
-      {/* Flecha de regresar */}
-      <TouchableOpacity onPress={() => router.back()}>
-        <ArrowLeft color="white" size={24} />
-      </TouchableOpacity>
-
-      {/* Título */}
-      <Text style={{ color: "white", fontSize: 18, fontWeight: "600" }}>
-        {title}
-      </Text>
-
-      {/* Menú hamburguesa */}
-      <TouchableOpacity onPress={() => alert("Abrir menú lateral")}>
-        <Menu color="white" size={24} />
-      </TouchableOpacity>
-    </View>
-  );
-
-  return (
-    <Stack>
-      <Stack.Screen
-        name="index"
-        options={{
-          headerShown: false, // sin header en login o home principal
-        }}
-      />
-
-      <Stack.Screen
+      <Tabs.Screen
         name="home"
         options={{
-          header: () => <CustomHeader title="Inicio" />,
+          title: "Inicio",
+          tabBarIcon: ({ color, size }) => (
+            <Home color={color} size={size} strokeWidth={1.8} />
+          ),
         }}
       />
-
-      <Stack.Screen
-        name="(app)/perfil"
+      <Tabs.Screen
+        name="zonas"
         options={{
-          header: () => <CustomHeader title="Mi Perfil" />,
+          title: "Zonas",
+          tabBarIcon: ({ color, size }) => (
+            <MapPin color={color} size={size} strokeWidth={1.8} />
+          ),
         }}
       />
-    </Stack>
+      <Tabs.Screen
+        name="historial"
+        options={{
+          title: "Historial",
+          tabBarIcon: ({ color, size }) => (
+            <Clock color={color} size={size} strokeWidth={1.8} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="perfil"
+        options={{
+          title: "Perfil",
+          tabBarIcon: ({ color, size }) => (
+            <User color={color} size={size} strokeWidth={1.8} />
+          ),
+        }}
+      />
+    </Tabs>
   );
 }

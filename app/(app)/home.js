@@ -159,7 +159,7 @@ export default function DriverMapScreen() {
 
   const handleToggleOnline = () => {
     setIsOnline(!isOnline);
-    console.log('Estado del conductor:', !isOnline ? 'Online' : 'Offline');
+    console.log('Estado del conductor:', !isOnline ? 'En servicio' : 'Fuera de servicio');
   };
 
   const advanceOrderQueue = () => {
