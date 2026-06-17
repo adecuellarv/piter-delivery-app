@@ -1,0 +1,169 @@
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  Image,
+  Linking,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+} from 'react-native';
+import { useRouter } from 'expo-router';
+import tw from '../../tw';
+import logo from '../../assets/icon.png';
+
+export default function ContinueRegisterScreen() {
+  const router = useRouter();
+  const [form, setForm] = useState({
+    correo: '',
+    telefono: '',
+    password: '',
+    confirmPassword: '',
+  });
+
+  const updateField = (field, value) => {
+    setForm((currentForm) => ({
+      ...currentForm,
+      [field]: value,
+    }));
+  };
+
+  const handleBecomeMember = () => {
+    const { correo, telefono, password, confirmPassword } = form;
+
+    if (!correo.trim() || !telefono.trim() || !password.trim() || !confirmPassword.trim()) {
+      Alert.alert('Error', 'Por favor completa todos los campos');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      Alert.alert('Error', 'Las contraseñas no coinciden');
+      return;
+    }
+
+    const phoneNumber = '+524426012026';
+    const message = [
+      'Hola, quiero ser miembro de PITER EATS',
+      `Correo: ${correo}`,
+      `Telefono: ${telefono}`,
+    ].join('\n');
+    const url = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+
+    Linking.canOpenURL(url)
+      .then((supported) => {
+        if (supported) {
+          return Linking.openURL(url);
+        }
+
+        Alert.alert('Error', 'WhatsApp no está instalado');
+        return null;
+      })
+      .catch((err) => console.error('Error al abrir WhatsApp:', err));
+  };
+
+  return (
+    <KeyboardAvoidingView
+      style={tw`flex-1 bg-[#E8E3D8]`}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <ScrollView
+        contentContainerStyle={tw`flex-grow justify-center px-8 py-2`}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={tw`items-center mb-2`}>
+          <Image
+            source={logo}
+            style={{ width: 190, height: 190 }}
+            resizeMode="contain"
+          />
+        </View>
+
+        <Text style={tw`text-[#3D3D3D] text-xl font-bold mb-8`}>
+          Seguir registro
+        </Text>
+
+        <Text style={tw`text-[#3D3D3D] text-lg font-semibold mb-3`}>
+          Correo
+        </Text>
+        <TextInput
+          style={tw`w-full bg-white border-2 border-[#3D3D3D] rounded-[16px] px-6 py-4 text-lg text-[#3D3D3D] mb-5`}
+          placeholder="Introduce tu correo"
+          placeholderTextColor="#999"
+          value={form.correo}
+          onChangeText={(value) => updateField('correo', value)}
+          autoCapitalize="none"
+          autoCorrect={false}
+          keyboardType="email-address"
+          textContentType="emailAddress"
+        />
+
+        <Text style={tw`text-[#3D3D3D] text-xl font-semibold mb-3`}>
+          Teléfono
+        </Text>
+        <TextInput
+          style={tw`w-full bg-white border-2 border-[#3D3D3D] rounded-[16px] px-6 py-4 text-lg text-[#3D3D3D] mb-5`}
+          placeholder="Introduce tu teléfono"
+          placeholderTextColor="#999"
+          value={form.telefono}
+          onChangeText={(value) => updateField('telefono', value)}
+          autoCorrect={false}
+          keyboardType="phone-pad"
+          textContentType="telephoneNumber"
+        />
+
+        <Text style={tw`text-[#3D3D3D] text-xl font-semibold mb-3`}>
+          Contraseña
+        </Text>
+        <TextInput
+          style={tw`w-full bg-white border-2 border-[#3D3D3D] rounded-[16px] px-6 py-4 text-lg text-[#3D3D3D] mb-5`}
+          placeholder="Crea una contraseña"
+          placeholderTextColor="#999"
+          value={form.password}
+          onChangeText={(value) => updateField('password', value)}
+          autoCapitalize="none"
+          autoCorrect={false}
+          secureTextEntry
+          textContentType="newPassword"
+        />
+
+        <Text style={tw`text-[#3D3D3D] text-xl font-semibold mb-3`}>
+          Confirmar contraseña
+        </Text>
+        <TextInput
+          style={tw`w-full bg-white border-2 border-[#3D3D3D] rounded-[16px] px-6 py-4 text-lg text-[#3D3D3D] mb-7`}
+          placeholder="Confirma tu contraseña"
+          placeholderTextColor="#999"
+          value={form.confirmPassword}
+          onChangeText={(value) => updateField('confirmPassword', value)}
+          autoCapitalize="none"
+          autoCorrect={false}
+          secureTextEntry
+          textContentType="newPassword"
+        />
+
+        <TouchableOpacity
+          style={tw`w-full bg-[#C86F4F] rounded-[16px] py-5 items-center shadow-lg mb-6`}
+          onPress={handleBecomeMember}
+          activeOpacity={0.8}
+        >
+          <Text style={tw`text-white text-xl font-bold tracking-wider`}>
+            SER MIEMBRO
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={tw`items-center`}
+          onPress={() => router.back()}
+          activeOpacity={0.7}
+        >
+          <Text style={tw`text-[#C86F4F] text-md font-semibold underline`}>
+            Volver a iniciar sesión
+          </Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </KeyboardAvoidingView>
+  );
+}

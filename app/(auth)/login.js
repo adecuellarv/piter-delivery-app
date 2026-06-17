@@ -5,21 +5,23 @@ import {
   TextInput,
   TouchableOpacity,
   Image,
-  Linking,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { useRouter } from "expo-router";
-import tw from  '../../tw'
-import logo from './img/piter-eats-logo.png';
+import tw from '../../tw'
+import logo from '../../assets/icon.png';
 
 export default function LoginScreen() {
   const router = useRouter();
-  const [token, setToken] = useState('');
+  const [correo, setCorreo] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
-    if (!token.trim()) {
-      Alert.alert('Error', 'Por favor introduce tu token');
+    if (!correo.trim() || !password.trim()) {
+      Alert.alert('Error', 'Por favor introduce tu correo y contraseña');
       return;
     }
 
@@ -31,7 +33,7 @@ export default function LoginScreen() {
       const response = await fetch('https://tu-api.com/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token }),
+        body: JSON.stringify({ correo, password }),
       });
 
       const data = await response.json();
@@ -49,75 +51,86 @@ export default function LoginScreen() {
     }
   };
 
-  const handleWhatsApp = () => {
-    const phoneNumber = '+524426012026'; 
-    const message = 'Hola, quiero ser miembro de PITER EATS';
-    const url = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
-
-    Linking.canOpenURL(url)
-      .then((supported) => {
-        if (supported) {
-          return Linking.openURL(url);
-        } else {
-          Alert.alert('Error', 'WhatsApp no está instalado');
-        }
-      })
-      .catch((err) => console.error('Error al abrir WhatsApp:', err));
+  const handleContinueRegister = () => {
+    router.push("/(auth)/continue-register");
   };
 
   return (
-    <View style={tw`flex-1 bg-[#E8E3D8] justify-center items-center px-8`}>
-      {/* Logo */}
-      <View style={tw`items-center mb-12`}>
-        <View
-          style={tw`w-48 h-48 items-center justify-center shadow-lg mb-8`}
-        >
+    <KeyboardAvoidingView
+      style={tw`flex-1 bg-[#E8E3D8]`}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <View style={tw`flex-1 justify-center items-center px-8`}>
+        {/* Logo */}
+        <View style={tw`items-center`}>
+
           <Image
             source={logo}
-            style={{ width: 290, height: 290 }}
+            style={{ width: 190, height: 190 }}
             resizeMode="contain"
           />
+
         </View>
-      </View>
 
-      <Text
-        style={tw`text-[#3D3D3D] text-2xl font-semibold mb-4 self-start`}
-      >
-        Token
-      </Text>
-
-      <TextInput
-        style={tw`w-full bg-white border-2 border-[#3D3D3D] rounded-[16px] px-6 py-4 text-lg text-[#3D3D3D] mb-6`}
-        placeholder="Introduce tu token"
-        placeholderTextColor="#999"
-        value={token}
-        onChangeText={setToken}
-        autoCapitalize="none"
-        autoCorrect={false}
-      />
-
-      <TouchableOpacity
-        style={tw`w-full bg-[#C86F4F] rounded-[16px] py-5 items-center shadow-lg mb-8`}
-        onPress={handleLogin}
-        disabled={loading}
-        activeOpacity={0.8}
-      >
-        <Text style={tw`text-white text-xl font-bold tracking-wider`}>
-          {loading ? 'CARGANDO...' : 'ENTRAR'}
-        </Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={tw`flex-row items-center`}
-        onPress={handleWhatsApp}
-        activeOpacity={0.7}
-      >
         <Text
-          style={tw`text-[#C86F4F] text-md font-semibold underline mr-2`}
+          style={tw`text-[#3D3D3D] text-xl font-semibold self-start`}
         >
-          Ser miembro
+          Correo
         </Text>
-      </TouchableOpacity>
-    </View>
+
+        <TextInput
+          style={tw`w-full bg-white border-2 border-[#3D3D3D] rounded-[16px] px-4 pt-2 pb-3 text-lg text-[#3D3D3D] mb-3`}
+          placeholder="Introduce tu correo"
+          placeholderTextColor="#999"
+          value={correo}
+          onChangeText={setCorreo}
+          autoCapitalize="none"
+          autoCorrect={false}
+          keyboardType="email-address"
+          textContentType="emailAddress"
+        />
+
+        <Text
+          style={tw`text-[#3D3D3D] text-xl font-semibold self-start`}
+        >
+          Contraseña
+        </Text>
+
+        <TextInput
+          style={tw`w-full bg-white border-2 border-[#3D3D3D] rounded-[16px] px-4 pt-2 pb-3 text-lg text-[#3D3D3D] mb-3`}
+          placeholder="Introduce tu contraseña"
+          placeholderTextColor="#999"
+          value={password}
+          onChangeText={setPassword}
+          autoCapitalize="none"
+          autoCorrect={false}
+          secureTextEntry
+          textContentType="password"
+        />
+
+        <TouchableOpacity
+          style={tw`w-full bg-[#C86F4F] rounded-[16px] py-2 items-center shadow-lg mb-8`}
+          onPress={handleLogin}
+          disabled={loading}
+          activeOpacity={0.8}
+        >
+          <Text style={tw`text-white text-xl font-bold tracking-wider`}>
+            {loading ? 'CARGANDO...' : 'ENTRAR'}
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={tw`flex-row items-center`}
+          onPress={handleContinueRegister}
+          activeOpacity={0.7}
+        >
+          <Text
+            style={tw`text-[#C86F4F] text-md font-semibold underline`}
+          >
+            Seguir registro
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </KeyboardAvoidingView>
   );
 }
