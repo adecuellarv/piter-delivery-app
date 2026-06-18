@@ -13,7 +13,7 @@ import {
 import { HelpCircle, Eye, EyeOff, Check, X } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import tw from '../../tw';
-import { createAccount } from '../../api/login';
+import { createAccount, loginDriver } from '../../api/login';
 import { useAuthStore } from '../../store/authStore';
 
 const logo = require('../../assets/logo_piter_east.png');
@@ -113,8 +113,22 @@ export default function ContinueRegisterScreen() {
 
     setLoading(true);
     try {
-      const data = await createAccount({ correo: correo.trim(), telefono: telefono.trim(), password });
-      setSession(data?.usuario ?? { correo: correo.trim(), telefono: telefono.trim() });
+      const cleanCorreo = correo.trim();
+      const cleanTelefono = telefono.trim();
+
+      await createAccount({ correo: cleanCorreo, telefono: cleanTelefono, password });
+
+      const session = await loginDriver({ correo: cleanCorreo, password });
+
+      setSession({
+        ...(session.usuario ?? {}),
+        correo: cleanCorreo,
+        telefono: cleanTelefono,
+        token: session.token,
+        deviceId: session.deviceId,
+        uid: session.user.uid,
+        loginData: session.data,
+      });
       router.replace('/(app)/home');
     } catch (error) {
       Alert.alert('Error', error.message || 'No se pudo crear la cuenta');

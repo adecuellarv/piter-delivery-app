@@ -5,6 +5,7 @@ import { useAuthStore } from '../store/authStore';
 export default function Index() {
   const user = useAuthStore((s) => s.user);
   const hydrated = useAuthStore((s) => s._hasHydrated);
+  const isAuthenticated = Boolean(user?.token && user?.uid);
 
   if (!hydrated) {
     return (
@@ -14,5 +15,5 @@ export default function Index() {
     );
   }
 
-  return <Redirect href={user ? '/(app)/home' : '/(auth)/login'} />;
+  return <Redirect href={isAuthenticated ? '/(app)/home' : '/(auth)/login'} />;
 }

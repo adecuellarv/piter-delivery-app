@@ -1,11 +1,29 @@
-import { Tabs } from "expo-router";
+import { Redirect, Tabs } from "expo-router";
+import { ActivityIndicator, View } from "react-native";
 import { Home, MapPin, Clock, User } from "lucide-react-native";
+import { useAuthStore } from "../../store/authStore";
 
 const ACTIVE_COLOR = "#C86F4F";
 const INACTIVE_COLOR = "#7A7A7A";
 const TAB_BAR_BG = "#1C1C1C";
 
 export default function AppLayout() {
+  const user = useAuthStore((s) => s.user);
+  const hydrated = useAuthStore((s) => s._hasHydrated);
+  const isAuthenticated = Boolean(user?.token && user?.uid);
+
+  if (!hydrated) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#E8E3D7" }}>
+        <ActivityIndicator color={ACTIVE_COLOR} size="large" />
+      </View>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Redirect href="/(auth)/login" />;
+  }
+
   return (
     <Tabs
       screenOptions={{

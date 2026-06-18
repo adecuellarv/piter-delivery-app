@@ -79,6 +79,7 @@ export default function LoginScreen() {
       const session = await loginDriver({ correo: correo.trim(), password });
 
       setSession({
+        ...(session.usuario ?? {}),
         correo: correo.trim(),
         token: session.token,
         deviceId: session.deviceId,
