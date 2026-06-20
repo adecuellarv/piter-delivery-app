@@ -1,5 +1,9 @@
 import axios from "axios"
 import { getBaseURL } from "./common";
+import { getFirebaseAuth } from "../config/firebase";
+
+const UPDATE_ZONAS_REPARTIDOR_URL =
+    process.env.EXPO_PUBLIC_UPDATE_ZONAS_REPARTIDOR_URL;
 
 const normalizeZone = (item) => {
     const zona = item?.zona ?? item;
@@ -20,7 +24,7 @@ const normalizeZone = (item) => {
     };
 };
 
-const serializeZones = (zones) =>
+const serializeZones = (zones = []) =>
     zones.map((zone) => ({
         zona: zone?.id ?? zone?.ID,
         tarifa: String(zone?.tarifa ?? 0),
@@ -38,6 +42,7 @@ export const getZones = async () => {
 }
 
 export const getRepartidorZones = async (repartidorId) => {
+
     try {
         if (!repartidorId) {
             return [];
@@ -60,35 +65,50 @@ export const getRepartidorZones = async (repartidorId) => {
     }
 };
 
-export const updateRepartidorZones = async (repartidorId, zones, token) => {
-    try {
-        if (!repartidorId) {
-            throw new Error("Falta el ID del repartidor");
-        }
-
-        const resp = await axios.post(
-            `${getBaseURL()}/repartidores/${repartidorId}`,
-            {
-                acf: {
-                    zonas: serializeZones(zones),
-                },
-            },
-            token
-                ? {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
-                : undefined
-        );
-
-        if (resp?.status >= 200 && resp?.status < 300) {
-            return resp?.data;
-        }
-
-        throw new Error("No se pudo actualizar el repartidor");
-    } catch (error) {
-        console.error('Error actualizando zonas del repartidor:', error);
-        throw error;
+export const updateRepartidorZones = async (repartidorId, zones, sessionToken) => {
+  try {
+    if (!UPDATE_ZONAS_REPARTIDOR_URL) {
+      throw new Error("Falta configurar EXPO_PUBLIC_UPDATE_ZONAS_REPARTIDOR_URL");
     }
+
+    if (!repartidorId) {
+      throw new Error("No se encontró el ID del repartidor");
+    }
+
+    if (!Array.isArray(zones)) {
+      throw new Error("Las zonas a actualizar no son válidas");
+    }
+
+    const auth = getFirebaseAuth();
+    const currentUser = auth.currentUser;
+    const token = currentUser ? await currentUser.getIdToken(true) : sessionToken;
+
+    if (!token) {
+      throw new Error("No hay usuario autenticado");
+    }
+
+    const resp = await axios.post(
+      UPDATE_ZONAS_REPARTIDOR_URL,
+      {
+        id: repartidorId,
+        zonas: serializeZones(zones),
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    console.log("#resp", resp.status, resp.data);
+
+    return resp.data;
+  } catch (error) {
+    console.error(
+      "Error actualizando zonas del repartidor:",
+      error?.response?.data || error
+    );
+    throw error;
+  }
 };

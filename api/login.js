@@ -51,6 +51,7 @@ export const loginDriver = async ({ correo, password }) => {
     LOGIN_REPARTIDOR_URL,
     {
       data: {
+        correo,
         deviceId,
       },
     },

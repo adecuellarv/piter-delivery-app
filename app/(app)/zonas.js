@@ -195,7 +195,7 @@ export default function ZonasScreen() {
       await updateRepartidorZones(repartidorId, nextZones, user?.token);
     } catch (err) {
       setZones(previousZones);
-      Alert.alert("Error", "No se pudieron guardar los cambios de zonas.");
+      Alert.alert("Error", err?.message || "No se pudieron guardar los cambios de zonas.");
     } finally {
       setSaving(false);
     }
