@@ -7,9 +7,14 @@ import {
   Alert,
   ActivityIndicator,
   RefreshControl,
+  Modal,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
+  FlatList,
 } from "react-native";
-import { MapPin, Trash2, Plus, Minus } from "lucide-react-native";
-import { getRepartidorZones, updateRepartidorZones } from "../../api/zones";
+import { MapPin, Trash2, Plus, Minus, X, Search } from "lucide-react-native";
+import { getZones, getRepartidorZones, updateRepartidorZones } from "../../api/zones";
 import { useAuthStore } from "../../store/authStore";
 
 const BG = "#EAE4D9";
@@ -155,6 +160,12 @@ export default function ZonasScreen() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
+  // Modal agregar zona
+  const [modalVisible, setModalVisible] = useState(false);
+  const [availableZones, setAvailableZones] = useState([]);
+  const [loadingAvailable, setLoadingAvailable] = useState(false);
+  const [search, setSearch] = useState("");
+
   const loadZones = useCallback(async ({ refresh = false } = {}) => {
     if (!repartidorId) {
       setZones([]);
@@ -238,6 +249,46 @@ export default function ZonasScreen() {
     await persistZones(nextZones, previousZones);
   };
 
+  const handleOpenModal = async () => {
+    setSearch("");
+    setModalVisible(true);
+    setLoadingAvailable(true);
+    try {
+      const data = await getZones();
+      setAvailableZones(data ?? []);
+    } catch {
+      Alert.alert("Error", "No se pudieron cargar las zonas disponibles.");
+      setModalVisible(false);
+    } finally {
+      setLoadingAvailable(false);
+    }
+  };
+
+  const handleAddZone = async (item) => {
+    const alreadyAdded = zones.some((z) => z.id === item.id);
+    if (alreadyAdded) {
+      Alert.alert("Zona duplicada", "Ya tienes esta zona agregada.");
+      return;
+    }
+    const newZone = {
+      id: item.id,
+      name: item.title?.rendered ?? item.name ?? "Zona",
+      orders: 0,
+      tarifa: 0,
+      minTarifa: 0,
+    };
+    const previousZones = zones;
+    const nextZones = [...zones, newZone];
+    setZones(nextZones);
+    setModalVisible(false);
+    await persistZones(nextZones, previousZones);
+  };
+
+  const filteredAvailable = availableZones.filter((z) => {
+    const name = z.title?.rendered ?? z.name ?? "";
+    return name.toLowerCase().includes(search.toLowerCase());
+  });
+
   return (
     <View style={{ flex: 1, backgroundColor: BG }}>
 
@@ -291,7 +342,9 @@ export default function ZonasScreen() {
 
         {/* Agregar zona */}
         <TouchableOpacity
+          onPress={handleOpenModal}
           activeOpacity={0.7}
+          disabled={saving}
           style={{
             marginTop: 8,
             borderWidth: 1.5,
@@ -301,11 +354,156 @@ export default function ZonasScreen() {
             paddingVertical: 16,
             alignItems: "center",
             backgroundColor: "#FFF8F5",
+            opacity: saving ? 0.5 : 1,
           }}
         >
           <Text style={{ color: ACCENT, fontSize: 15, fontWeight: "600" }}>+ Agregar zona</Text>
         </TouchableOpacity>
       </ScrollView>
+
+      {/* Modal agregar zona */}
+      <Modal
+        visible={modalVisible}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <TouchableOpacity
+          activeOpacity={1}
+          onPress={() => setModalVisible(false)}
+          style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.4)" }}
+        />
+
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          style={{
+            position: "absolute",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            backgroundColor: BG,
+            borderTopLeftRadius: 24,
+            borderTopRightRadius: 24,
+            maxHeight: "75%",
+            overflow: "hidden",
+          }}
+        >
+          {/* Handle */}
+          <View style={{ alignItems: "center", paddingTop: 12, paddingBottom: 4 }}>
+            <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: "#C8C0B4" }} />
+          </View>
+
+          {/* Header */}
+          <View style={{
+            flexDirection: "row",
+            alignItems: "center",
+            paddingHorizontal: 20,
+            paddingVertical: 14,
+          }}>
+            <Text style={{ flex: 1, fontSize: 17, fontWeight: "700", color: "#1A1815" }}>
+              Agregar zona
+            </Text>
+            <TouchableOpacity
+              onPress={() => setModalVisible(false)}
+              activeOpacity={0.7}
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: 16,
+                backgroundColor: "#E8E0D6",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <X size={16} color="#6B6560" strokeWidth={2} />
+            </TouchableOpacity>
+          </View>
+
+          {/* Buscador */}
+          <View style={{
+            flexDirection: "row",
+            alignItems: "center",
+            marginHorizontal: 20,
+            marginBottom: 12,
+            backgroundColor: "#fff",
+            borderRadius: 12,
+            paddingHorizontal: 12,
+            borderWidth: 1,
+            borderColor: "#E0D8D0",
+          }}>
+            <Search size={16} color="#9A9490" strokeWidth={1.8} style={{ marginRight: 8 }} />
+            <TextInput
+              value={search}
+              onChangeText={setSearch}
+              placeholder="Buscar zona..."
+              placeholderTextColor="#B0A89E"
+              style={{ flex: 1, height: 44, fontSize: 14, color: "#1A1815" }}
+              autoCorrect={false}
+            />
+          </View>
+
+          {/* Lista */}
+          {loadingAvailable ? (
+            <View style={{ alignItems: "center", paddingVertical: 30 }}>
+              <ActivityIndicator color={ACCENT} />
+            </View>
+          ) : (
+            <FlatList
+              data={filteredAvailable}
+              keyExtractor={(item) => String(item.id)}
+              contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40 }}
+              ListEmptyComponent={
+                <Text style={{ color: "#9A9490", fontSize: 14, textAlign: "center", paddingVertical: 20 }}>
+                  No se encontraron zonas
+                </Text>
+              }
+              renderItem={({ item, index }) => {
+                const name = item.title?.rendered ?? item.name ?? "Zona";
+                const alreadyAdded = zones.some((z) => z.id === item.id);
+                const isLast = index === filteredAvailable.length - 1;
+                return (
+                  <TouchableOpacity
+                    onPress={() => !alreadyAdded && handleAddZone(item)}
+                    activeOpacity={alreadyAdded ? 1 : 0.7}
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      paddingVertical: 16,
+                      paddingHorizontal: 16,
+                      backgroundColor: "#fff",
+                      borderRadius: index === 0 ? 0 : 0,
+                      borderBottomWidth: isLast ? 0 : 1,
+                      borderBottomColor: "#F0EBE3",
+                      borderRadius: 0,
+                      opacity: alreadyAdded ? 0.45 : 1,
+                      ...(index === 0 ? { borderTopLeftRadius: 14, borderTopRightRadius: 14 } : {}),
+                      ...(isLast ? { borderBottomLeftRadius: 14, borderBottomRightRadius: 14 } : {}),
+                    }}
+                  >
+                    <View style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: 10,
+                      backgroundColor: "#FDF0EB",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      marginRight: 12,
+                    }}>
+                      <MapPin size={18} color={ACCENT} strokeWidth={1.8} />
+                    </View>
+                    <Text style={{ flex: 1, fontSize: 15, fontWeight: "600", color: "#1A1815" }}>
+                      {name}
+                    </Text>
+                    {alreadyAdded && (
+                      <Text style={{ fontSize: 12, color: "#9A9490" }}>Agregada</Text>
+                    )}
+                  </TouchableOpacity>
+                );
+              }}
+            />
+          )}
+        </KeyboardAvoidingView>
+      </Modal>
     </View>
   );
 }

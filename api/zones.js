@@ -31,13 +31,15 @@ const serializeZones = (zones = []) =>
     }));
 
 export const getZones = async () => {
-    try{
-        const resp = await axios.get(`${getBaseURL()}/zonas?per_page=100`)
-        if (resp?.status === 200)
-        return resp?.data;
-    }
-    catch (error) {
-        console.error('Error obteniendo zonas getzones:', error);
+    try {
+        const resp = await axios.get(
+            `${getBaseURL()}/zonas?tipos=8&_fields=id,title.rendered,meta.rating_average,meta.rating_count,acf`
+        );
+        if (resp?.status === 200) return resp?.data ?? [];
+        return [];
+    } catch (error) {
+        console.error("Error obteniendo zonas:", error);
+        throw error;
     }
 }
 
