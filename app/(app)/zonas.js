@@ -1,17 +1,38 @@
-import { useState } from "react";
-import { View, Text, TouchableOpacity, ScrollView, Alert } from "react-native";
+import { useCallback, useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  Alert,
+  ActivityIndicator,
+  RefreshControl,
+} from "react-native";
 import { MapPin, Trash2, Plus, Minus } from "lucide-react-native";
+import { getRepartidorZones, updateRepartidorZones } from "../../api/zones";
+import { useAuthStore } from "../../store/authStore";
 
 const BG = "#EAE4D9";
 const ACCENT = "#C86F4F";
 const DARK = "#1C1C1C";
 
-const MOCK_ZONES = [
-  { id: 1, name: "Ignacio Pérez", orders: 8, tarifa: 45, minTarifa: 35 },
-  { id: 2, name: "San Clemente", orders: 3, tarifa: 60, minTarifa: 45 },
-];
+const getRepartidorId = (user) =>
+  user?.id ??
+  user?.ID ??
+  user?.repartidorId ??
+  user?.repartidor_id ??
+  user?.wpId ??
+  user?.wp_id ??
+  user?.postId ??
+  user?.post_id ??
+  user?.loginData?.result?.usuario?.id ??
+  user?.loginData?.result?.usuario?.ID ??
+  user?.loginData?.result?.usuario?.wpId ??
+  user?.loginData?.result?.usuario?.wp_id ??
+  user?.loginData?.result?.usuario?.postId ??
+  user?.loginData?.result?.usuario?.post_id;
 
-function ZoneCard({ zone, onDelete, onChangeTarifa }) {
+function ZoneCard({ zone, onDelete, onChangeTarifa, disabled }) {
   return (
     <View
       style={{
@@ -51,6 +72,7 @@ function ZoneCard({ zone, onDelete, onChangeTarifa }) {
 
         <TouchableOpacity
           onPress={() => onDelete(zone.id)}
+          disabled={disabled}
           activeOpacity={0.7}
           style={{
             width: 36,
@@ -59,6 +81,7 @@ function ZoneCard({ zone, onDelete, onChangeTarifa }) {
             backgroundColor: "#F5F0EB",
             alignItems: "center",
             justifyContent: "center",
+            opacity: disabled ? 0.5 : 1,
           }}
         >
           <Trash2 size={17} color="#B0A89E" strokeWidth={1.8} />
@@ -82,6 +105,7 @@ function ZoneCard({ zone, onDelete, onChangeTarifa }) {
         <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
           <TouchableOpacity
             onPress={() => onChangeTarifa(zone.id, -5)}
+            disabled={disabled}
             activeOpacity={0.8}
             style={{
               width: 34,
@@ -90,6 +114,7 @@ function ZoneCard({ zone, onDelete, onChangeTarifa }) {
               backgroundColor: DARK,
               alignItems: "center",
               justifyContent: "center",
+              opacity: disabled ? 0.5 : 1,
             }}
           >
             <Minus size={16} color="#fff" strokeWidth={2.5} />
@@ -101,6 +126,7 @@ function ZoneCard({ zone, onDelete, onChangeTarifa }) {
 
           <TouchableOpacity
             onPress={() => onChangeTarifa(zone.id, 5)}
+            disabled={disabled}
             activeOpacity={0.8}
             style={{
               width: 34,
@@ -109,6 +135,7 @@ function ZoneCard({ zone, onDelete, onChangeTarifa }) {
               backgroundColor: ACCENT,
               alignItems: "center",
               justifyContent: "center",
+              opacity: disabled ? 0.5 : 1,
             }}
           >
             <Plus size={16} color="#fff" strokeWidth={2.5} />
@@ -120,7 +147,59 @@ function ZoneCard({ zone, onDelete, onChangeTarifa }) {
 }
 
 export default function ZonasScreen() {
-  const [zones, setZones] = useState(MOCK_ZONES);
+  const user = useAuthStore((s) => s.user);
+  const repartidorId = getRepartidorId(user);
+  const [zones, setZones] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const loadZones = useCallback(async ({ refresh = false } = {}) => {
+    if (!repartidorId) {
+      setZones([]);
+      setError("No se encontró el repartidor de la sesión.");
+      setLoading(false);
+      setRefreshing(false);
+      return;
+    }
+
+    if (refresh) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
+
+    setError("");
+
+    try {
+      const data = await getRepartidorZones(repartidorId);
+      setZones(data);
+    } catch (err) {
+      setError("No se pudieron cargar tus zonas.");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [repartidorId]);
+
+  useEffect(() => {
+    loadZones();
+  }, [loadZones]);
+
+  const persistZones = async (nextZones, previousZones) => {
+    setSaving(true);
+    setError("");
+
+    try {
+      await updateRepartidorZones(repartidorId, nextZones, user?.token);
+    } catch (err) {
+      setZones(previousZones);
+      Alert.alert("Error", "No se pudieron guardar los cambios de zonas.");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const handleDelete = (id) => {
     Alert.alert("Eliminar zona", "¿Quieres eliminar esta zona?", [
@@ -128,36 +207,85 @@ export default function ZonasScreen() {
       {
         text: "Eliminar",
         style: "destructive",
-        onPress: () => setZones((prev) => prev.filter((z) => z.id !== id)),
+        onPress: async () => {
+          const previousZones = zones;
+          const nextZones = zones.filter((z) => z.id !== id);
+
+          setZones(nextZones);
+          await persistZones(nextZones, previousZones);
+        },
       },
     ]);
   };
 
-  const handleChangeTarifa = (id, delta) => {
-    setZones((prev) =>
-      prev.map((z) => {
+  const handleChangeTarifa = async (id, delta) => {
+    const previousZones = zones;
+    let changed = false;
+
+    const nextZones = zones.map((z) => {
         if (z.id !== id) return z;
         const next = z.tarifa + delta;
-        return next >= z.minTarifa ? { ...z, tarifa: next } : z;
-      })
-    );
+        if (next < z.minTarifa) return z;
+        changed = true;
+        return { ...z, tarifa: next };
+      });
+
+    if (!changed) {
+      return;
+    }
+
+    setZones(nextZones);
+    await persistZones(nextZones, previousZones);
   };
 
   return (
     <View style={{ flex: 1, backgroundColor: BG }}>
 
 
-      <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
+      <ScrollView
+        contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => loadZones({ refresh: true })}
+            tintColor={ACCENT}
+          />
+        }
+      >
         <Text style={{ fontSize: 13, color: "#9A9490", marginBottom: 14, fontWeight: "500" }}>
           {zones.length} zona{zones.length !== 1 ? "s" : ""} activa{zones.length !== 1 ? "s" : ""}
+          {saving ? " - Guardando..." : ""}
         </Text>
 
-        {zones.map((zone) => (
+        {loading ? (
+          <View style={{ alignItems: "center", paddingVertical: 30 }}>
+            <ActivityIndicator color={ACCENT} />
+            <Text style={{ fontSize: 13, color: "#9A9490", marginTop: 10 }}>
+              Cargando zonas...
+            </Text>
+          </View>
+        ) : error ? (
+          <View style={{ backgroundColor: "#FFF8F5", borderRadius: 16, padding: 16, marginBottom: 12 }}>
+            <Text style={{ color: ACCENT, fontSize: 14, fontWeight: "600", marginBottom: 10 }}>
+              {error}
+            </Text>
+            <TouchableOpacity onPress={() => loadZones()} activeOpacity={0.75}>
+              <Text style={{ color: DARK, fontSize: 14, fontWeight: "700" }}>Reintentar</Text>
+            </TouchableOpacity>
+          </View>
+        ) : zones.length === 0 ? (
+          <View style={{ backgroundColor: "#fff", borderRadius: 16, padding: 16, marginBottom: 12 }}>
+            <Text style={{ color: "#3D3933", fontSize: 14, fontWeight: "600" }}>
+              No tienes zonas asignadas.
+            </Text>
+          </View>
+        ) : zones.map((zone) => (
           <ZoneCard
             key={zone.id}
             zone={zone}
             onDelete={handleDelete}
             onChangeTarifa={handleChangeTarifa}
+            disabled={saving}
           />
         ))}
 
