@@ -57,16 +57,7 @@ export const getOrdersByZones = async ({ zonaIds = [], limit = 20 } = {}) => {
     { zonas: zonaIds, limit },
     { headers: { Authorization: `Bearer ${token}` } }
   );
-/*
-  console.log(`
-curl -X POST "${GET_ORDERS_BY_ZONE_URL}" \
--H "Authorization: Bearer ${token}" \
--H "Content-Type: application/json" \
--d '${JSON.stringify({
-  zonas: zonaIds,
-  limit,
-})}'
-`);*/
+
 console.log('#data', data)
 
   return data?.orders;
