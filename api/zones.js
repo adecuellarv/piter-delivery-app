@@ -44,7 +44,6 @@ export const getZones = async () => {
 }
 
 export const getRepartidorZones = async (repartidorId) => {
-
     try {
         if (!repartidorId) {
             return [];
@@ -102,8 +101,6 @@ export const updateRepartidorZones = async (repartidorId, zones, sessionToken) =
         },
       }
     );
-
-    console.log("#resp", resp.status, resp.data);
 
     return resp.data;
   } catch (error) {

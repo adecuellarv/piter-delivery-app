@@ -1,16 +1,37 @@
 import { Redirect, Tabs } from "expo-router";
 import { ActivityIndicator, View } from "react-native";
+import { useEffect } from "react";
 import { Home, MapPin, Clock, User } from "lucide-react-native";
 import { useAuthStore } from "../../store/authStore";
+import { useZonesStore } from "../../store/zonesStore";
+import { getRepartidorZones } from "../../api/zones";
 
 const ACTIVE_COLOR = "#C86F4F";
 const INACTIVE_COLOR = "#7A7A7A";
 const TAB_BAR_BG = "#1C1C1C";
 
+const getRepartidorId = (user) =>
+  user?.id ?? user?.ID ?? user?.repartidorId ?? user?.repartidor_id ??
+  user?.loginData?.result?.usuario?.id ?? user?.loginData?.result?.usuario?.ID;
+
 export default function AppLayout() {
   const user = useAuthStore((s) => s.user);
   const hydrated = useAuthStore((s) => s._hasHydrated);
   const isAuthenticated = Boolean(user?.token && user?.uid);
+  const setZones = useZonesStore((s) => s.setZones);
+  const setLoading = useZonesStore((s) => s.setLoading);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const repartidorId = getRepartidorId(user);
+    if (!repartidorId) return;
+
+    setLoading(true);
+    getRepartidorZones(repartidorId)
+      .then((data) => setZones(data ?? []))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [isAuthenticated]);
 
   if (!hydrated) {
     return (

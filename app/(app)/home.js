@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useFocusEffect } from 'expo-router';
 import {
   View,
   Text,
@@ -7,118 +8,26 @@ import {
   Alert,
   ScrollView,
   Dimensions,
+  ActivityIndicator,
 } from 'react-native';
 import MapView, { Marker, Circle } from 'react-native-maps';
 import { ShoppingBag } from 'lucide-react-native';
-import tw from '../../tw'
-
-const MOCK_ORDERS = [
-  {
-    id: 101,
-    restaurant: 'Pizza Bella',
-    address: 'Av. Principal 456',
-    pickupOrigin: 'Ignacio Peréz (El muerto)',
-    distance: '1.2 km',
-    time: '5 min',
-    total: '$286',
-    items: ['1 pizza pepperoni familiar', '1 refresco 2L', '1 orden de papas'],
-    latitude: 20.5052,
-    longitude: -100.1414,
-  },
-  {
-    id: 102,
-    restaurant: 'Tacos Don Pepe',
-    address: 'Calle Hidalgo 210',
-    pickupOrigin: 'El Chamizal',
-    distance: '900 m',
-    time: '4 min',
-    total: '$148',
-    items: ['4 tacos al pastor', '1 gringa', '2 aguas frescas'],
-    latitude: 20.5018,
-    longitude: -100.1482,
-  },
-  {
-    id: 103,
-    restaurant: 'Sushi Go',
-    address: 'Blvd. Centro Sur 88',
-    pickupOrigin: 'Cabecera municipal CENTRO',
-    distance: '1.8 km',
-    time: '7 min',
-    total: '$322',
-    items: ['2 rollos california', '1 yakimeshi', '1 té helado'],
-    latitude: 20.4979,
-    longitude: -100.1389,
-  },
-  {
-    id: 104,
-    restaurant: 'Burger House',
-    address: 'Av. Tecnologico 541',
-    pickupOrigin: 'Ignacio Peréz (El muerto)',
-    distance: '2.1 km',
-    time: '8 min',
-    total: '$264',
-    items: ['2 hamburguesas dobles', '1 aros de cebolla', '2 malteadas'],
-    latitude: 20.5095,
-    longitude: -100.1523,
-  },
-  {
-    id: 105,
-    restaurant: 'La Pasta Nostra',
-    address: 'Calle Allende 19',
-    pickupOrigin: 'El Chamizal',
-    distance: '1.4 km',
-    time: '6 min',
-    total: '$358',
-    items: ['1 fettuccine alfredo', '1 lasaña boloñesa', '2 panes de ajo'],
-    latitude: 20.4957,
-    longitude: -100.1466,
-  },
-  {
-    id: 106,
-    restaurant: 'Ensaladas Fresh',
-    address: 'Plaza Jardines Local 6',
-    pickupOrigin: 'Cabecera municipal CENTRO',
-    distance: '750 m',
-    time: '3 min',
-    total: '$173',
-    items: ['1 ensalada cesar', '1 wrap de pollo', '1 jugo verde'],
-    latitude: 20.5036,
-    longitude: -100.1365,
-  },
-  {
-    id: 107,
-    restaurant: 'Cafeteria Aurora',
-    address: 'Av. Universidad 320',
-    pickupOrigin: 'Ignacio Peréz (El muerto)',
-    distance: '2.4 km',
-    time: '9 min',
-    total: '$129',
-    items: ['2 lattes grandes', '2 croissants', '1 brownie'],
-    latitude: 20.5112,
-    longitude: -100.1441,
-  },
-  {
-    id: 108,
-    restaurant: 'Pollos El Carbon',
-    address: 'Calzada del Parque 77',
-    pickupOrigin: 'El Chamizal',
-    distance: '1.6 km',
-    time: '6 min',
-    total: '$412',
-    items: ['1 pollo rostizado', '1 arroz rojo', '1 orden de tortillas', '1 refresco 2L'],
-    latitude: 20.4988,
-    longitude: -100.1544,
-  },
-];
+import tw from '../../tw';
+import { useAuthStore } from '../../store/authStore';
+import { useZonesStore } from '../../store/zonesStore';
+import { getOrdersByZones } from '../../api/orders';
 
 export default function DriverMapScreen() {
   const CARD_WIDTH = Dimensions.get('window').width - 64;
   const CARD_SPACING = 16;
   const CARD_SNAP_INTERVAL = CARD_WIDTH + CARD_SPACING;
+  const user = useAuthStore((s) => s.user);
+  const storedZones = useZonesStore((s) => s.zones);
   const [isOnline, setIsOnline] = useState(true);
-  const [pendingOrders, setPendingOrders] = useState(MOCK_ORDERS);
+  const [pendingOrders, setPendingOrders] = useState([]);
   const [activeOrderIndex, setActiveOrderIndex] = useState(0);
   const [expandedOrderId, setExpandedOrderId] = useState(null);
+  const [loadingOrders, setLoadingOrders] = useState(false);
   const mapRef = useRef(null);
 
   // Ubicación del conductor (ejemplo)
@@ -128,6 +37,37 @@ export default function DriverMapScreen() {
   });
   const newOrder = pendingOrders[activeOrderIndex] ?? null;
   const nearbyOrders = pendingOrders;
+
+  const loadOrders = useCallback(async () => {
+    if (!isOnline) {
+      setPendingOrders([]);
+      return;
+    }
+    setLoadingOrders(true);
+    try {
+      const zonaIds = storedZones
+        .map((z) => z.id ?? z.ID ?? z.zona?.ID ?? z.zona?.id)
+        .filter(Boolean);
+      if (zonaIds.length === 0) {
+        setPendingOrders([]);
+        return;
+      }
+      const orders = await getOrdersByZones({ zonaIds, limit: 20, sessionToken: user?.token });
+      setPendingOrders(orders);
+      setActiveOrderIndex(0);
+    } catch (err) {
+      console.error('Error cargando órdenes:', err);
+      Alert.alert('Error', 'No se pudieron cargar los pedidos disponibles.');
+    } finally {
+      setLoadingOrders(false);
+    }
+  }, [isOnline, storedZones]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadOrders();
+    }, [loadOrders])
+  );
 
   // Animación para el efecto de radar (pulso)
   const pulseAnim = useRef(new Animated.Value(0)).current;
@@ -331,8 +271,18 @@ export default function DriverMapScreen() {
         ))}
       </MapView>
 
+      {/* Loading órdenes */}
+      {loadingOrders && (
+        <View style={tw`absolute left-0 right-0 bottom-10 items-center`}>
+          <View style={{ backgroundColor: '#fff', borderRadius: 16, paddingHorizontal: 20, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+            <ActivityIndicator color="#C86F4F" size="small" />
+            <Text style={{ fontSize: 14, color: '#3D3D3D', fontWeight: '500' }}>Buscando pedidos...</Text>
+          </View>
+        </View>
+      )}
+
       {/* Carrusel de pedidos */}
-      {pendingOrders.length > 0 && (
+      {!loadingOrders && pendingOrders.length > 0 && (
         <View style={tw`absolute left-0 right-0 bottom-10`}>
           <Text style={tw`text-sm text-[#3D3D3D] font-semibold px-8 mb-3`}>
             {pendingOrders.length} pedidos disponibles en tu zona

@@ -16,6 +16,7 @@ import {
 import { MapPin, Trash2, Plus, Minus, X, Search } from "lucide-react-native";
 import { getZones, getRepartidorZones, updateRepartidorZones } from "../../api/zones";
 import { useAuthStore } from "../../store/authStore";
+import { useZonesStore } from "../../store/zonesStore";
 
 const BG = "#EAE4D9";
 const ACCENT = "#C86F4F";
@@ -154,6 +155,7 @@ function ZoneCard({ zone, onDelete, onChangeTarifa, disabled }) {
 export default function ZonasScreen() {
   const user = useAuthStore((s) => s.user);
   const repartidorId = getRepartidorId(user);
+  const setStoreZones = useZonesStore((s) => s.setZones);
   const [zones, setZones] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -186,6 +188,7 @@ export default function ZonasScreen() {
     try {
       const data = await getRepartidorZones(repartidorId);
       setZones(data);
+      setStoreZones(data);
     } catch (err) {
       setError("No se pudieron cargar tus zonas.");
     } finally {
@@ -201,11 +204,13 @@ export default function ZonasScreen() {
   const persistZones = async (nextZones, previousZones) => {
     setSaving(true);
     setError("");
+    setStoreZones(nextZones);
 
     try {
       await updateRepartidorZones(repartidorId, nextZones, user?.token);
     } catch (err) {
       setZones(previousZones);
+      setStoreZones(previousZones);
       Alert.alert("Error", err?.message || "No se pudieron guardar los cambios de zonas.");
     } finally {
       setSaving(false);
