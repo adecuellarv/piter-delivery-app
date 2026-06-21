@@ -1,5 +1,5 @@
-import { getFirebaseAuth } from "../config/firebase";
 import apiClient from "./apiClient";
+import { getFirebaseIdToken } from "./authToken";
 
 const GET_ORDERS_BY_ZONE_URL =
   process.env.EXPO_PUBLIC_GET_ORDERS_BY_ZONE_URL ||
@@ -49,22 +49,25 @@ const normalizeOrder = (item) => ({
   raw: item,
 });
 
-export const getOrdersByZones = async ({ zonaIds = [], limit = 20, sessionToken } = {}) => {
-  const auth = getFirebaseAuth();
-  const currentUser = auth.currentUser;
-  const token = currentUser ? await currentUser.getIdToken(true) : sessionToken;
-
-  if (!token) {
-    throw new Error("No hay usuario autenticado");
-  }
+export const getOrdersByZones = async ({ zonaIds = [], limit = 20 } = {}) => {
+  const token = await getFirebaseIdToken();
 
   const data = await apiClient.post(
     GET_ORDERS_BY_ZONE_URL,
     { zonas: zonaIds, limit },
     { headers: { Authorization: `Bearer ${token}` } }
   );
-
-  console.log("#getOrdersByZones response", data);
+/*
+  console.log(`
+curl -X POST "${GET_ORDERS_BY_ZONE_URL}" \
+-H "Authorization: Bearer ${token}" \
+-H "Content-Type: application/json" \
+-d '${JSON.stringify({
+  zonas: zonaIds,
+  limit,
+})}'
+`);*/
+console.log('#data', data)
 
   const raw = Array.isArray(data)
     ? data

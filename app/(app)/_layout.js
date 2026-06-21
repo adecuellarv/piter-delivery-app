@@ -16,13 +16,15 @@ const getRepartidorId = (user) =>
 
 export default function AppLayout() {
   const user = useAuthStore((s) => s.user);
+  const authUser = useAuthStore((s) => s.authUser);
+  const authLoading = useAuthStore((s) => s.authLoading);
   const hydrated = useAuthStore((s) => s._hasHydrated);
-  const isAuthenticated = Boolean(user?.token && user?.uid);
+  const isAuthenticated = Boolean(authUser?.uid);
   const setZones = useZonesStore((s) => s.setZones);
   const setLoading = useZonesStore((s) => s.setLoading);
 
   useEffect(() => {
-    if (!isAuthenticated) return;
+    if (authLoading || !isAuthenticated) return;
     const repartidorId = getRepartidorId(user);
     if (!repartidorId) return;
 
@@ -31,9 +33,9 @@ export default function AppLayout() {
       .then((data) => setZones(data ?? []))
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [isAuthenticated]);
+  }, [authLoading, isAuthenticated, user]);
 
-  if (!hydrated) {
+  if (!hydrated || authLoading) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#E8E3D7" }}>
         <ActivityIndicator color={ACTIVE_COLOR} size="large" />

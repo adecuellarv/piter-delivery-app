@@ -65,7 +65,6 @@ export const loginDriver = async ({ correo, password }) => {
   return {
     data,
     usuario: data?.result?.usuario,
-    token,
     deviceId,
     user: credential.user,
   };

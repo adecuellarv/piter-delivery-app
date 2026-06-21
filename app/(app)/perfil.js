@@ -1,7 +1,9 @@
 import { View, Text, TouchableOpacity, ScrollView, Alert } from "react-native";
 import { Pencil, Bell, HelpCircle, ChevronRight, LogOut } from "lucide-react-native";
 import { useRouter } from "expo-router";
+import { signOut } from "firebase/auth";
 import { useAuthStore } from "../../store/authStore";
+import { getFirebaseAuth } from "../../config/firebase";
 const BG = "#EAE4D9";
 const ACCENT = "#C86F4F";
 
@@ -54,9 +56,13 @@ export default function PerfilScreen() {
       {
         text: "Cerrar sesión",
         style: "destructive",
-        onPress: () => {
-          clearSession();
-          router.replace("/(auth)/login");
+        onPress: async () => {
+          try {
+            await signOut(getFirebaseAuth());
+          } finally {
+            clearSession();
+            router.replace("/(auth)/login");
+          }
         },
       },
     ]);

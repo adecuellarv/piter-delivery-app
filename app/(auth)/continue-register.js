@@ -51,6 +51,7 @@ const BTN = {
 export default function ContinueRegisterScreen() {
   const router = useRouter();
   const setSession = useAuthStore((s) => s.setSession);
+  const setAuthUser = useAuthStore((s) => s.setAuthUser);
   const [form, setForm] = useState({ correo: '', telefono: '', password: '', confirmPassword: '' });
   const [loading, setLoading] = useState(false);
   const [focused, setFocused] = useState(null);
@@ -124,11 +125,11 @@ export default function ContinueRegisterScreen() {
         ...(session.usuario ?? {}),
         correo: cleanCorreo,
         telefono: cleanTelefono,
-        token: session.token,
         deviceId: session.deviceId,
         uid: session.user.uid,
         loginData: session.data,
       });
+      setAuthUser(session.user);
       router.replace('/(app)/home');
     } catch (error) {
       Alert.alert('Error', error.message || 'No se pudo crear la cuenta');

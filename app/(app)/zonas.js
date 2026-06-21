@@ -207,7 +207,7 @@ export default function ZonasScreen() {
     setStoreZones(nextZones);
 
     try {
-      await updateRepartidorZones(repartidorId, nextZones, user?.token);
+      await updateRepartidorZones(repartidorId, nextZones);
     } catch (err) {
       setZones(previousZones);
       setStoreZones(previousZones);

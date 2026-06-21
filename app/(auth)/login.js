@@ -38,6 +38,7 @@ const BTN = {
 export default function LoginScreen() {
   const router = useRouter();
   const setSession = useAuthStore((s) => s.setSession);
+  const setAuthUser = useAuthStore((s) => s.setAuthUser);
   const [correo, setCorreo] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -81,11 +82,11 @@ export default function LoginScreen() {
       setSession({
         ...(session.usuario ?? {}),
         correo: correo.trim(),
-        token: session.token,
         deviceId: session.deviceId,
         uid: session.user.uid,
         loginData: session.data,
       });
+      setAuthUser(session.user);
       router.replace('/(app)/home');
     } catch (error) {
       Alert.alert('Error', error.message || 'No se pudo conectar con el servidor');

@@ -1,6 +1,6 @@
 import axios from "axios"
 import { getBaseURL } from "./common";
-import { getFirebaseAuth } from "../config/firebase";
+import { getFirebaseIdToken } from "./authToken";
 
 const UPDATE_ZONAS_REPARTIDOR_URL =
     process.env.EXPO_PUBLIC_UPDATE_ZONAS_REPARTIDOR_URL;
@@ -66,7 +66,7 @@ export const getRepartidorZones = async (repartidorId) => {
     }
 };
 
-export const updateRepartidorZones = async (repartidorId, zones, sessionToken) => {
+export const updateRepartidorZones = async (repartidorId, zones) => {
   try {
     if (!UPDATE_ZONAS_REPARTIDOR_URL) {
       throw new Error("Falta configurar EXPO_PUBLIC_UPDATE_ZONAS_REPARTIDOR_URL");
@@ -80,13 +80,7 @@ export const updateRepartidorZones = async (repartidorId, zones, sessionToken) =
       throw new Error("Las zonas a actualizar no son válidas");
     }
 
-    const auth = getFirebaseAuth();
-    const currentUser = auth.currentUser;
-    const token = currentUser ? await currentUser.getIdToken(true) : sessionToken;
-
-    if (!token) {
-      throw new Error("No hay usuario autenticado");
-    }
+    const token = await getFirebaseIdToken();
 
     const resp = await axios.post(
       UPDATE_ZONAS_REPARTIDOR_URL,

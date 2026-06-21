@@ -21,7 +21,7 @@ export default function DriverMapScreen() {
   const CARD_WIDTH = Dimensions.get('window').width - 64;
   const CARD_SPACING = 16;
   const CARD_SNAP_INTERVAL = CARD_WIDTH + CARD_SPACING;
-  const user = useAuthStore((s) => s.user);
+  const authLoading = useAuthStore((s) => s.authLoading);
   const storedZones = useZonesStore((s) => s.zones);
   const [isOnline, setIsOnline] = useState(true);
   const [pendingOrders, setPendingOrders] = useState([]);
@@ -39,6 +39,10 @@ export default function DriverMapScreen() {
   const nearbyOrders = pendingOrders;
 
   const loadOrders = useCallback(async () => {
+    if (authLoading) {
+      return;
+    }
+
     if (!isOnline) {
       setPendingOrders([]);
       return;
@@ -52,7 +56,7 @@ export default function DriverMapScreen() {
         setPendingOrders([]);
         return;
       }
-      const orders = await getOrdersByZones({ zonaIds, limit: 20, sessionToken: user?.token });
+      const orders = await getOrdersByZones({ zonaIds, limit: 20 });
       setPendingOrders(orders);
       setActiveOrderIndex(0);
     } catch (err) {
@@ -61,7 +65,7 @@ export default function DriverMapScreen() {
     } finally {
       setLoadingOrders(false);
     }
-  }, [isOnline, storedZones]);
+  }, [authLoading, isOnline, storedZones]);
 
   useFocusEffect(
     useCallback(() => {
