@@ -20,6 +20,7 @@ import { useZonesStore } from '../../store/zonesStore';
 import { getOrdersByZones } from '../../api/orders';
 import { getLocalById, getStoreStatus } from '../../api/negocios';
 import { calcRouteDistances, extractClientCoords } from '../../functions/distance';
+import { getTarifaForZone } from '../../functions/zones';
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = SCREEN_WIDTH - 64;
@@ -34,12 +35,15 @@ const MOCK_CLIENT = {
 const SCORE_LEVELS = ['Bajo', 'Medio', 'Bueno', 'Excelente'];
 const SCORE_COLORS = ['#E53935', '#FFA726', '#8BC34A', '#43A047'];
 
-function OrderCard({ order, index, total, isActive, driverLocation, onPress, onAccept, onReject }) {
+function OrderCard({ order, index, total, isActive, driverLocation, zones, onPress, onAccept, onReject }) {
   const storeLat = order.location?.lat ?? driverLocation.latitude + 0.005;
   const storeLng = order.location?.lng ?? driverLocation.longitude + 0.005;
   const clientCoords = extractClientCoords(order);
   const clientLat = clientCoords?.lat ?? storeLat + 0.015;
   const clientLng = clientCoords?.lng ?? storeLng + 0.008;
+
+  const zoneId = order.location?.zoneId ?? order.zoneId ?? order.zonaId;
+  const tarifa = getTarifaForZone(zones, zoneId, order.location?.zoneName);
 
   const distances = calcRouteDistances(
     driverLocation.latitude,
@@ -92,9 +96,16 @@ function OrderCard({ order, index, total, isActive, driverLocation, onPress, onA
           </Text>
           <Text style={{ fontSize: 12, color: '#888' }}>{order.location?.zoneName ?? ''}</Text>
         </View>
-        <Text style={{ fontSize: 16, fontWeight: '800', color: '#3D3D3D' }}>
-          ${order.totals?.total}
-        </Text>
+        <View style={{ alignItems: 'flex-end' }}>
+          <Text style={{ fontSize: 16, fontWeight: '800', color: '#3D3D3D' }}>
+            ${order.totals?.total}
+          </Text>
+          {tarifa != null && (
+            <Text style={{ fontSize: 12, color: '#C86F4F', fontWeight: '600' }}>
+              +${tarifa} entrega
+            </Text>
+          )}
+        </View>
       </View>
 
       <View style={{ flexDirection: 'row', gap: 8, marginBottom: 14 }}>
@@ -167,7 +178,7 @@ function ScoreBar({ score }) {
   );
 }
 
-function OrderDetailSheet({ order, index, total, onClose, onAccept, onReject, driverLocation }) {
+function OrderDetailSheet({ order, index, total, onClose, onAccept, onReject, driverLocation, zones }) {
   const [mapTab, setMapTab] = useState('recoger');
   const [localData, setLocalData] = useState(null);
   const slideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
@@ -207,6 +218,10 @@ function OrderDetailSheet({ order, index, total, onClose, onAccept, onReject, dr
   const DRIVER_TO_LOCAL = distances.driverToLocal;
   const LOCAL_TO_CLIENT = distances.localToClient;
   const TOTAL_DISTANCE = distances.total;
+
+  const zoneId = localData?.acf?.zona?.ID ?? order.location?.zoneId ?? order.zoneId;
+  const zoneName = localData?.acf?.zona?.post_title ?? order.location?.zoneName;
+  const tarifa = getTarifaForZone(zones, zoneId, zoneName);
 
   useEffect(() => {
     Animated.spring(slideAnim, {
@@ -792,11 +807,11 @@ function OrderDetailSheet({ order, index, total, onClose, onAccept, onReject, dr
                     Tu tarifa de entrega
                   </Text>
                   <Text style={{ fontSize: 11, color: '#999', marginTop: 2 }}>
-                    Zona {order.location?.zoneName ?? ''} · negociable
+                    {zoneName ? `Zona ${zoneName} · negociable` : 'negociable'}
                   </Text>
                 </View>
                 <Text style={{ fontSize: 22, fontWeight: '800', color: '#fff' }}>
-                  ${order.totals?.deliveryFee}
+                  {tarifa != null ? `$${tarifa}` : '—'}
                 </Text>
               </View>
             </View>
@@ -1073,6 +1088,7 @@ export default function DriverMapScreen() {
                   setActiveOrderIndex(index);
                   setSelectedOrder({ order, index });
                 }}
+                zones={storedZones}
                 onAccept={handleAcceptOrder}
                 onReject={handleRejectOrder}
               />
@@ -1100,6 +1116,7 @@ export default function DriverMapScreen() {
           index={selectedOrder.index}
           total={pendingOrders.length}
           driverLocation={driverLocation}
+          zones={storedZones}
           onClose={() => setSelectedOrder(null)}
           onAccept={handleAcceptOrder}
           onReject={handleRejectOrder}
