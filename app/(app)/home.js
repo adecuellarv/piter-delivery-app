@@ -92,8 +92,8 @@ export default function DriverMapScreen() {
 
     mapRef.current.animateToRegion(
       {
-        latitude: newOrder.latitude,
-        longitude: newOrder.longitude,
+        latitude: newOrder?.location?.lat,
+        longitude: newOrder?.location?.lng,
         latitudeDelta: 0.02,
         longitudeDelta: 0.02,
       },
@@ -130,7 +130,7 @@ export default function DriverMapScreen() {
   const handleAcceptOrder = () => {
     if (!newOrder) return;
 
-    Alert.alert('Pedido Aceptado', `Has aceptado el pedido de ${newOrder.restaurant}`);
+    Alert.alert('Pedido Aceptado', `Has aceptado el pedido de ${newOrder.localSnapshot?.name}`);
     advanceOrderQueue();
   };
 
@@ -246,7 +246,7 @@ export default function DriverMapScreen() {
         {nearbyOrders.map((order, index) => (
           <Marker
             key={order.id}
-            coordinate={{ latitude: order.latitude, longitude: order.longitude }}
+            coordinate={{ latitude: order.location?.lat, longitude: order.location?.lng }}
             zIndex={index === activeOrderIndex ? 10 : 1}
           >
             <View
@@ -334,19 +334,18 @@ export default function DriverMapScreen() {
                   </View>
 
                   <View style={tw`flex-1`}>
-                    <Text style={tw`text-xl font-bold text-[#3D3D3D] mb-2`}>
-                      {order.restaurant}
+                    <Text style={tw`text-xl font-bold text-[#3D3D3D] mb-1`}>
+                      {order.localSnapshot?.name}
                     </Text>
-                    <Text style={tw`text-sm text-[#757575] mb-2`}>
-                      {order.address}
+                    <Text style={tw`text-sm text-[#757575] mb-1`}>
+                      {order.location?.zoneName}
                     </Text>
-                    <Text style={tw`text-sm text-[#C86F4F] mb-2`}>
-                      Origen: {order.pickupOrigin}
+                    <Text style={tw`text-sm text-[#C86F4F] mb-1`}>
+                      {order.type === 'pickup' ? 'Recoger en local' : 'Entrega a domicilio'}
                     </Text>
-                    <View style={tw`flex-row`}>
-                      <Text style={tw`text-sm text-[#757575] mr-4`}>{order.distance}</Text>
-                      <Text style={tw`text-sm text-[#757575]`}>{order.time}</Text>
-                    </View>
+                    <Text style={tw`text-sm font-semibold text-[#3D3D3D]`}>
+                      ${order.totals?.total} {order.totals?.currency}
+                    </Text>
                   </View>
                 </View>
 
@@ -355,17 +354,36 @@ export default function DriverMapScreen() {
                     <Text style={tw`text-sm font-semibold text-[#3D3D3D] mb-2`}>
                       Detalle del pedido
                     </Text>
-                    <Text style={tw`text-sm text-[#6E6258] mb-1`}>
-                      Total: {order.total}
+                    <View style={tw`flex-row justify-between mb-2`}>
+                      <Text style={tw`text-sm text-[#6E6258]`}>Subtotal</Text>
+                      <Text style={tw`text-sm text-[#6E6258]`}>${order.totals?.subtotal}</Text>
+                    </View>
+                    {order.totals?.deliveryFee > 0 && (
+                      <View style={tw`flex-row justify-between mb-2`}>
+                        <Text style={tw`text-sm text-[#6E6258]`}>Envío</Text>
+                        <Text style={tw`text-sm text-[#6E6258]`}>${order.totals?.deliveryFee}</Text>
+                      </View>
+                    )}
+                    <View style={tw`flex-row justify-between mb-3`}>
+                      <Text style={tw`text-sm font-semibold text-[#3D3D3D]`}>Total</Text>
+                      <Text style={tw`text-sm font-semibold text-[#3D3D3D]`}>${order.totals?.total} {order.totals?.currency}</Text>
+                    </View>
+                    <Text style={tw`text-sm font-semibold text-[#3D3D3D] mb-2`}>
+                      Productos:
                     </Text>
-                    <Text style={tw`text-sm text-[#6E6258] mb-2`}>
-                      Items:
-                    </Text>
-                    {order.items.map((item) => (
-                      <Text key={item} style={tw`text-sm text-[#6E6258] mb-1`}>
-                        • {item}
-                      </Text>
+                    {order.items?.map((item) => (
+                      <View key={item.productId} style={tw`flex-row justify-between mb-1`}>
+                        <Text style={tw`text-sm text-[#6E6258] flex-1 mr-2`}>
+                          {item.quantity}x {item.title}
+                        </Text>
+                        <Text style={tw`text-sm text-[#6E6258]`}>${item.totalPrice}</Text>
+                      </View>
                     ))}
+                    {order.payment && (
+                      <Text style={tw`text-xs text-[#9E9E9E] mt-2`}>
+                        Pago: {order.payment.method === 'cash' ? 'Efectivo' : order.payment.method}
+                      </Text>
+                    )}
                   </View>
                 )}
 

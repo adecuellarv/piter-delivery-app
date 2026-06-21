@@ -299,7 +299,7 @@ export default function ZonasScreen() {
 
 
       <ScrollView
-        contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
+        contentContainerStyle={{ paddingTop: 88, paddingBottom: 40, paddingHorizontal: 24 }}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}

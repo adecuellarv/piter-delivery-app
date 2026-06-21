@@ -69,9 +69,7 @@ curl -X POST "${GET_ORDERS_BY_ZONE_URL}" \
 `);*/
 console.log('#data', data)
 
-  const raw = Array.isArray(data)
-    ? data
-    : data?.orders ?? data?.data ?? data?.result ?? data?.pedidos ?? [];
-
-  return raw.map(normalizeOrder);
+  return data?.orders;
+  
+  //return raw.map(normalizeOrder);
 };
